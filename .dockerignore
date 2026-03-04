@@ -7,5 +7,4 @@ dist
 .dockerignore
 Dockerfile
 *.md
-*.lock
 mcp.json.example
