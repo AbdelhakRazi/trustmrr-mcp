@@ -19,7 +19,7 @@ Sign in to [TrustMRR](https://trustmrr.com) and generate an API key from your ac
 <summary>Claude Code CLI</summary>
 
 ```bash
-claude mcp add --transport http trustmrr https://mcp.trustmrr.com/mcp \
+claude mcp add --transport http trustmrr https://trustmrr-mcp-production.up.railway.app/mcp \
   --header "Authorization: Bearer YOUR_API_KEY"
 ```
 </details>
@@ -34,7 +34,7 @@ Go to **Settings → Tools → AI Assistant → Model Context Protocol (MCP)** a
   "servers": {
     "trustmrr": {
       "type": "http",
-      "url": "https://mcp.trustmrr.com/mcp",
+      "url": "https://trustmrr-mcp-production.up.railway.app/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY"
       }
@@ -54,7 +54,7 @@ Add to your `.vscode/mcp.json`:
   "servers": {
     "trustmrr": {
       "type": "http",
-      "url": "https://mcp.trustmrr.com/mcp",
+      "url": "https://trustmrr-mcp-production.up.railway.app/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY"
       }
@@ -73,7 +73,7 @@ Create or edit `~/.gemini/settings.json`:
 {
   "mcpServers": {
     "trustmrr": {
-      "httpUrl": "https://mcp.trustmrr.com/mcp",
+      "httpUrl": "https://trustmrr-mcp-production.up.railway.app/mcp",
       "httpHeaders": {
         "Authorization": "Bearer YOUR_API_KEY"
       }
@@ -93,7 +93,7 @@ Add to your MCP settings:
   "servers": {
     "trustmrr": {
       "type": "http",
-      "url": "https://mcp.trustmrr.com/mcp",
+      "url": "https://trustmrr-mcp-production.up.railway.app/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY"
       }
