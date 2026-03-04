@@ -38,6 +38,10 @@ async function handleMcp(req: IncomingMessage, res: import("node:http").ServerRe
     "mcp-session-id": req.headers["mcp-session-id"],
   })}`);
 
+  // Disable proxy buffering/caching (Railway Varnish/CDN)
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Accel-Buffering", "no");
+
   // Reject unauthenticated requests at the boundary
   const token = extractBearerToken(req);
   if (!token) {
@@ -78,6 +82,7 @@ async function handleMcp(req: IncomingMessage, res: import("node:http").ServerRe
   console.log("[mcp] → creating new session");
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
+    enableJsonResponse: true,
     onsessioninitialized: (id) => {
       console.log(`[mcp] ✓ session initialized: ${id}`);
       sessions.set(id, { transport, token });
