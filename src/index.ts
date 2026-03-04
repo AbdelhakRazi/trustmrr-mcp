@@ -117,7 +117,7 @@ async function main() {
   });
 
   httpServer.listen(PORT, () => {
-    console.error(`TrustMRR MCP server listening on http://0.0.0.0:${PORT}/mcp`);
+    console.log(`TrustMRR MCP server listening on http://0.0.0.0:${PORT}/mcp`);
   });
 
   const shutdown = async () => {
