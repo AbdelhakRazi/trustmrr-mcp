@@ -35,7 +35,7 @@ async function main() {
   const httpServer = createHttpServer(async (req, res) => {
     const url = req.url ?? "/";
 
-    if (url === "/health" && req.method === "GET") {
+    if ((url === "/" || url === "/health") && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ status: "ok" }));
       return;
