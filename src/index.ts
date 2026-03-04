@@ -9,29 +9,87 @@ import { TrustMrrClient } from "./trustmrr/client.js";
 
 const PORT = Number(process.env.PORT) || 3000;
 
+interface Session {
+  transport: StreamableHTTPServerTransport;
+  token: string;
+}
+
+const sessions = new Map<string, Session>();
+
 function extractBearerToken(req: IncomingMessage): string | undefined {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) return undefined;
   return header.slice(7);
 }
 
-async function main() {
-  const server = createServer((extra) => {
-    const token = extra.authInfo?.token;
-    if (!token) {
-      throw new Error(
-        "Missing Authorization header. Send: Authorization: Bearer <TRUSTMRR_API_KEY>",
-      );
-    }
-    return new TrustMrrClient(token);
-  });
+function attachAuth(req: IncomingMessage, token: string) {
+  (req as IncomingMessage & { auth?: AuthInfo }).auth = {
+    token,
+    clientId: "http-client",
+    scopes: [],
+  };
+}
 
+async function handleMcp(req: IncomingMessage, res: import("node:http").ServerResponse) {
+  // Reject unauthenticated requests at the boundary
+  const token = extractBearerToken(req);
+  if (!token) {
+    res.writeHead(401, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Missing Authorization header. Send: Authorization: Bearer <TRUSTMRR_API_KEY>" }));
+    return;
+  }
+
+  // Check for existing session
+  const sessionId = req.headers["mcp-session-id"] as string | undefined;
+  const existing = sessionId ? sessions.get(sessionId) : undefined;
+
+  if (existing) {
+    // Validate token matches the one used to create the session
+    if (existing.token !== token) {
+      res.writeHead(403, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Token does not match the session" }));
+      return;
+    }
+    attachAuth(req, token);
+    await existing.transport.handleRequest(req, res);
+    return;
+  }
+
+  // For non-init requests without a valid session, reject
+  if (sessionId && !existing) {
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Session not found" }));
+    return;
+  }
+
+  // New session — create transport + server
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
+    onsessioninitialized: (id) => {
+      sessions.set(id, { transport, token });
+    },
+  });
+
+  transport.onclose = () => {
+    if (transport.sessionId) {
+      sessions.delete(transport.sessionId);
+    }
+  };
+
+  const server = createServer((extra) => {
+    const authToken = extra.authInfo?.token;
+    if (!authToken) {
+      throw new Error("Missing API key in auth context");
+    }
+    return new TrustMrrClient(authToken);
   });
 
   await server.connect(transport);
+  attachAuth(req, token);
+  await transport.handleRequest(req, res);
+}
 
+async function main() {
   const httpServer = createHttpServer(async (req, res) => {
     const url = req.url ?? "/";
 
@@ -42,15 +100,15 @@ async function main() {
     }
 
     if (url === "/mcp") {
-      const token = extractBearerToken(req);
-      if (token) {
-        (req as IncomingMessage & { auth?: AuthInfo }).auth = {
-          token,
-          clientId: "http-client",
-          scopes: [],
-        };
+      try {
+        await handleMcp(req, res);
+      } catch (error) {
+        console.error("MCP error:", error);
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Internal server error" }));
+        }
       }
-      await transport.handleRequest(req, res);
       return;
     }
 
@@ -63,7 +121,10 @@ async function main() {
   });
 
   const shutdown = async () => {
-    await server.close();
+    for (const { transport } of sessions.values()) {
+      await transport.close();
+    }
+    sessions.clear();
     httpServer.close();
     process.exit(0);
   };
