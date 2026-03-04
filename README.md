@@ -16,7 +16,36 @@ Sign in to [TrustMRR](https://trustmrr.com) and generate an API key from your ac
 ### MCP client configuration
 
 <details>
-<summary>VS Code / GitHub Copilot</summary>
+<summary>Claude Code CLI</summary>
+
+```bash
+claude mcp add --transport http trustmrr https://mcp.trustmrr.com/mcp \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+</details>
+
+<details>
+<summary>GitHub Copilot (IntelliJ IDEs)</summary>
+
+Go to **Settings → Tools → AI Assistant → Model Context Protocol (MCP)** and add a new server:
+
+```json
+{
+  "servers": {
+    "trustmrr": {
+      "type": "http",
+      "url": "https://mcp.trustmrr.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary>GitHub Copilot (Visual Studio Code)</summary>
 
 Add to your `.vscode/mcp.json`:
 
@@ -36,11 +65,21 @@ Add to your `.vscode/mcp.json`:
 </details>
 
 <details>
-<summary>Claude Code CLI</summary>
+<summary>Gemini CLI</summary>
 
-```bash
-claude mcp add --transport http trustmrr https://mcp.trustmrr.com/mcp \
-  --header "Authorization: Bearer YOUR_API_KEY"
+Create or edit `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "trustmrr": {
+      "httpUrl": "https://mcp.trustmrr.com/mcp",
+      "httpHeaders": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
 ```
 </details>
 
